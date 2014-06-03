@@ -18,11 +18,11 @@ Note: The 'ip' and 'as' methods cannot be used as a direct replacement for 'pq' 
 
 
 Usage:
-  mvn -q exec:java
+    mvn -q exec:java
 
 Examples:
-  MAVEN_OPTS=-Xmx1024m mvn -q exec:java -Dexec.args="pq 1 1000 1000000"
-  MAVEN_OPTS=-Xmx1024m mvn -q exec:java -Dexec.args="pq 4 1000000"
-  MAVEN_OPTS=-Xmx1024m mvn -q exec:java -Dexec.args="ip 4 1000000"
+    MAVEN_OPTS=-Xmx1024m mvn -q exec:java -Dexec.args="pq 1 1000 1000000"
+    MAVEN_OPTS=-Xmx1024m mvn -q exec:java -Dexec.args="pq 4 1000000"
+    MAVEN_OPTS=-Xmx1024m mvn -q exec:java -Dexec.args="ip 4 1000000"
 
 - Toke Eskildsen, te@ekot.dk, 2014
