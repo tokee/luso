@@ -56,10 +56,10 @@ public class Luso {
           sb.append(time/M);
         }
         Arrays.sort(times);
-        long mean = threads % 2 == 0 ? (times[threads/2]+times[threads/2-1])/2 : times[threads/2];
-        long numPerMS = mean/M == 0 ? 0 : numdocs / (mean/M);
-        System.out.println(String.format("  %,10d docs in mean %,7d ms, %,5d docs/ms. Thread times: %s ms",
-                                         numdocs, mean/M, numPerMS, sb.toString()));
+        long median = threads % 2 == 0 ? (times[threads/2]+times[threads/2-1])/2 : times[threads/2];
+        long numPerMS = median/M == 0 ? 0 : numdocs / (median/M);
+        System.out.println(String.format("  %,10d docs in median %,7d ms, %,5d docs/ms. Thread times: %s ms",
+                                         numdocs, median/M, numPerMS, sb.toString()));
       }
     } catch (Exception e) {
       e.printStackTrace();
