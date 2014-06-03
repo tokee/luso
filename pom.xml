@@ -5,7 +5,7 @@
     <artifactId>luso</artifactId>
     <packaging>jar</packaging>
     <version>0.1-SNAPSHOT</version>
-    <name>lucene_sort</name>
+    <name>luso</name>
     <url>http://maven.apache.org</url>
 
     <dependencies>

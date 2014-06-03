@@ -21,6 +21,7 @@ import java.util.concurrent.*;
 @SuppressWarnings("ALL")
 public class Luso {
 
+  public static final int M = 1000000;
   public static void main(String[] args) throws InterruptedException, ExecutionException {
     if (args.length < 3) {
       usage();
@@ -33,21 +34,45 @@ public class Luso {
 
     ExecutorService executor = Executors.newFixedThreadPool(threads);
     System.out.println("Starting " + threads + " threads with extraction method " + args[0]);
-    List<Future<String>> extractors = new ArrayList<>(threads);
-    for (int i = 0 ; i < threads ; i++) {
-      extractors.add(executor.submit(createExtractor(args[0], "extractor_" + (i+1), docs)));
+
+    try {
+      StringBuilder sb = new StringBuilder();
+      for (int numdocs: docs) {
+        List<Future<Long>> extractors = new ArrayList<>(threads);
+        for (int i = 0 ; i < threads ; i++) {
+          extractors.add(executor.submit(createExtractor(args[0], numdocs)));
+        }
+
+        sb.setLength(0);
+        long[] times = new long[threads];
+        int index = 0;
+        for (Future<Long> extractor: extractors) {
+          long time = extractor.get();
+          times[index++] = time;
+
+          if (sb.length() > 0) {
+            sb.append(", ");
+          }
+          sb.append(time/M);
+        }
+        Arrays.sort(times);
+        long mean = threads % 2 == 0 ? (times[threads/2]+times[threads/2-1])/2 : times[threads/2];
+        long numPerMS = mean/M == 0 ? 0 : numdocs / (mean/M);
+        System.out.println(String.format("  %,10d docs in mean %,7d ms, %,5d docs/ms. Thread times: %s ms",
+                                         numdocs, mean/M, numPerMS, sb.toString()));
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    } finally {
+      System.exit(0);
     }
-    for (Future<String> extractor: extractors) {
-      System.out.println(extractor.get());
-    }
-    System.exit(0);
   }
 
-  private static Callable<String> createExtractor(String method, String id, List<Integer> numdocs) {
+  private static Callable<Long> createExtractor(String method, int numdocs) {
     switch (method) {
-      case "pq" : return new PriorityQueueExtract(id, numdocs);
-      case "ip" : return new LuceneInPlaceExtract(id, numdocs);
-      case "as" : return new LuceneArraySortExtract(id, numdocs);
+      case "pq" : return new PriorityQueueExtract(numdocs);
+      case "ip" : return new LuceneInPlaceExtract(numdocs);
+      case "as" : return new LuceneArraySortExtract(numdocs);
       default:
         System.err.println("Extraction method '" + method + "' is unknown");
         usage();
@@ -64,27 +89,22 @@ public class Luso {
     System.exit(0);
   }
 
-  private static abstract class Extractor implements Callable<String> {
+  private static abstract class Extractor implements Callable<Long> {
     private final StringBuilder sb = new StringBuilder();
-    private final String id;
-    private final List<Integer> numdocs;
+    private final int numdocs;
 
-    public Extractor(String id, List<Integer> numdocs) {
-      this.id = id;
+    public Extractor(int numdocs) {
       this.numdocs = numdocs;
     }
 
     @Override
-    public String call() throws Exception {
-      sb.append("Extraction method " + getName() + ": " + id + "\n");
-      for (int numdoc: numdocs) {
-        long extractTime = -System.nanoTime();
-        extract(new Random(87), numdoc);
-        extractTime += System.nanoTime();
-        long randomTime = measureRandom(numdoc);
-        sb.append(String.format("  %,10d docIDs in %,7d ms\n", numdoc, (extractTime-randomTime)/1000000));
-      }
-      return sb.toString();
+    public Long call() throws Exception {
+      long extractTime = -System.nanoTime();
+      extract(new Random(87), numdocs);
+      extractTime += System.nanoTime();
+      long randomTime = measureRandom(numdocs);
+//        sb.append(String.format("  %,10d docIDs in %,7d ms\n", numdoc, (extractTime-randomTime)/1000000));
+      return extractTime - randomTime;
     }
 
     public abstract void extract(Random random, int numdoc);
@@ -104,8 +124,8 @@ public class Luso {
   }
 
   private static class PriorityQueueExtract extends Extractor {
-    private PriorityQueueExtract(String id, List<Integer> numdocs) {
-      super(id, numdocs);
+    private PriorityQueueExtract(int numdocs) {
+      super(numdocs);
     }
 
     @Override
@@ -143,8 +163,8 @@ public class Luso {
   }
 
   private static class LuceneInPlaceExtract extends Extractor {
-    public LuceneInPlaceExtract(String id, List<Integer> numdocs) {
-      super(id, numdocs);
+    public LuceneInPlaceExtract(int numdocs) {
+      super(numdocs);
     }
 
     @Override
@@ -186,8 +206,8 @@ public class Luso {
   }
 
   private static class LuceneArraySortExtract extends Extractor {
-    public LuceneArraySortExtract(String id, List<Integer> numdocs) {
-      super(id, numdocs);
+    public LuceneArraySortExtract(int numdocs) {
+      super(numdocs);
     }
 
     @Override
